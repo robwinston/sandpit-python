@@ -12,9 +12,9 @@ from datetime import datetime
 # for unduly nested zips, flatten  / after files are moved remove orphaned directories
 
 home_dir = os.environ['HOME']
-source_path_name = home_dir + '/learn-master/udemy/java8-complete-reorg/zips/'
-target_path_name = home_dir + '/learn-master/udemy/java8-complete-reorg/lectures/'
-file_extension = 'java'
+source_path_name = home_dir + '/learn-master/udemy/python-complete-reorg/zips/'
+target_path_name = home_dir + '/learn-master/udemy/python-complete-reorg/lectures/'
+file_extension = 'py'
 
 if not (os.path.isdir(source_path_name) and os.path.isdir(target_path_name)):
     print('One or more invalid input directories: ')
@@ -22,12 +22,13 @@ if not (os.path.isdir(source_path_name) and os.path.isdir(target_path_name)):
     print('\t' + target_path_name)
     exit(1)
 
+# probably an easier way to do this, but brute force suffices ...
 now = datetime.now()
 log_suffix = str.format("{:04d}{:02d}{:02d}_{:02d}{:02d}{:02d}", now.year, now.month, now.day, now.hour, now.minute, now.second)
-log_file_name = str.format("{}/unzipper_{}.log", home_dir, log_suffix)
+log_file_name = str.format("{}/unzipperpy_{}.log", home_dir, log_suffix)
 
 
-log_file = open(log_file_name, mode='a+')
+log_file = open(log_file_name, mode='w')
 
 
 print('='*80, file=log_file)
@@ -40,9 +41,20 @@ source_path = Path(source_path_name)
 interactive = False
 
 
+# this is fragile ...
+# relies on zip file having name of the form
+# 'aword somedigits and maybe some other stuff.zip', blank delimited
+# if not, function bails & caller decides what to do about not getting anything back ...
 def dir_name_for_file(file_name):
     bits = str.split(file_name)
-    return "{}{}{:03d}".format(target_path_name, bits[0], int(bits[1]))
+    if len(bits) >1:
+        try:
+            return "{}{}{:03d}".format(target_path_name, bits[0], int(bits[1]))
+        except ValueError:
+            return ''
+    else:
+        return ''
+
 
 
 def get_root_dirs(zip_file_filelist):
@@ -79,12 +91,20 @@ for source_file in [entry for entry in source_path.iterdir() if entry.is_file()]
         print("Processing: " + source_file_name, file=log_file)
 
     lecture_dir_name = dir_name_for_file(source_file_name)
+    if lecture_dir_name == '':
+        print("Skipping zipfile:" + source_file_name, file=log_file)
+        continue
+
     if os.path.isdir(lecture_dir_name):
         shutil.rmtree(lecture_dir_name)
 
     zip_file = ZipFile(source_path_name + source_file_name, mode="r")
 
     root_dirs = get_root_dirs(zip_file.filelist)
+
+    if len(root_dirs) == 0:
+        # apparently this zip isn't nested, so create a 'blank' root
+        root_dirs.add('')
 
     # some zip files contain multiple projects ...
     for root_dir in root_dirs:
