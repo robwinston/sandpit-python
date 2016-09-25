@@ -14,7 +14,7 @@ from datetime import datetime
 home_dir = os.environ['HOME']
 source_path_name = home_dir + '/learn-master/udemy/python-complete-reorg/zips/'
 target_path_name = home_dir + '/learn-master/udemy/python-complete-reorg/lectures/'
-file_extension = 'py'
+file_extensions = ['py', 'txt']
 
 if not (os.path.isdir(source_path_name) and os.path.isdir(target_path_name)):
     print('One or more invalid input directories: ')
@@ -111,7 +111,7 @@ for source_file in [entry for entry in source_path.iterdir() if entry.is_file()]
         project_dir_name = lecture_dir_name + '/' + root_dir
         # find and extract the matching ext files
         zfile_names = [zf.filename for zf in zip_file.filelist if
-                       str.split(zf.filename, sep='.')[-1] == file_extension and zf.filename.find(root_dir) == 0]
+                       str.split(zf.filename, sep='.')[-1] in file_extensions and zf.filename.find(root_dir) == 0]
 
         if len(zfile_names) == 0:
             print("Nothing found in {} in {} sub-dir".format(zip_file.filename, root_dir), file=log_file)
