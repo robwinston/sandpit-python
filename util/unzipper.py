@@ -10,9 +10,16 @@ import shutil
 # (so multiple versions of the same java Class can co-exist, qualified by the lecture/project they appeared in)
 # for unduly nested zips, flatten  / after files are moved remove orphaned directories
 
-source_path_name = '/Users/robw/learn-master/udemy/java8-complete-reorg/zips/'
+home_dir = os.environ['HOME']
+source_path_name = home_dir + '/learn-master/udemy/java8-complete-reorg/zips/'
+target_path_name = home_dir + '/learn-master/udemy/java8-complete-reorg/lectures/'
 
-target_path_name = '/Users/robw/learn-master/udemy/java8-complete-reorg/lectures/'
+if not (os.path.isdir(source_path_name) and os.path.isdir(target_path_name)):
+    print('One or more invalid input directories: ')
+    print('\t' + source_path_name)
+    print('\t' + target_path_name)
+    exit(1)
+
 
 source_path = Path(source_path_name)
 
