@@ -4,6 +4,8 @@ import os
 import shutil
 from datetime import datetime
 
+join = os.path.join
+
 # Examine a downloaded 'lecture' zip file, e.g. from Udemy - The Complete Java 8 Developer Course
 # For each 'project' (usually just one per zip, but sometimes more), extract all of the files with specified extensions
 # and place them in a 'lecture/proj_name' folder - i.e. toss sub-directories
@@ -13,8 +15,8 @@ from datetime import datetime
 # after everything is moved, remove orphaned directories
 
 home_dir = os.environ['HOME']
-source_path_name = home_dir + '/learn-master/udemy/python-complete-reorg/zips/'
-target_path_name = home_dir + '/learn-master/udemy/python-complete-reorg/'
+source_path_name = join(home_dir, 'learn-master/udemy/python-complete-reorg/zips/')
+target_path_name = join(home_dir, 'learn-master/udemy/python-complete-reorg/')
 file_extensions = ['java', 'py', 'txt']
 
 if not (os.path.isdir(source_path_name) and os.path.isdir(target_path_name)):
