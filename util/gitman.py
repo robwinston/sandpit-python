@@ -36,5 +36,10 @@ if is_dirty:
     print("{} has {} untracked_files".format(repo.working_tree_dir, len(untracked_files)))
     for file in untracked_files:
         print(file)
-
-
+    index = repo.index
+    e = index.entries
+    diff = repo.index.diff(repo.head.commit)
+    change_types = ('A', 'D', 'R', 'M')
+    for change_type in change_types:
+        for change in diff.iter_change_type(change_type):
+            print("{}:{}".format(change_type, change))
