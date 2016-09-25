@@ -4,17 +4,18 @@ import os
 import shutil
 from datetime import datetime
 
-# Examine a downloaded 'lecture' zip file from Udemy - The Complete Java 8 Developer Course
-# For each 'project' (usually just one per zip, but sometimes more), extract all of the java files
-# and place them in a 'lecture/proj_name' folder -
-# ... in this instance ignoring 'package' directories, because the intent is to refactor these later
+# Examine a downloaded 'lecture' zip file, e.g. from Udemy - The Complete Java 8 Developer Course
+# For each 'project' (usually just one per zip, but sometimes more), extract all of the files with specified extensions
+# and place them in a 'lecture/proj_name' folder - i.e. toss sub-directories
+# ... for java files this amounts to ignoring 'package' directories, because the intent is to refactor these later
 # (so multiple versions of the same java Class can co-exist, qualified by the lecture/project they appeared in)
-# for unduly nested zips, flatten  / after files are moved remove orphaned directories
+# for unduly nested zips, hoist project dirs
+# after everything is moved, remove orphaned directories
 
 home_dir = os.environ['HOME']
 source_path_name = home_dir + '/learn-master/udemy/python-complete-reorg/zips/'
-target_path_name = home_dir + '/learn-master/udemy/python-complete-reorg/lectures/'
-file_extensions = ['py', 'txt']
+target_path_name = home_dir + '/learn-master/udemy/python-complete-reorg/'
+file_extensions = ['java', 'py', 'txt']
 
 if not (os.path.isdir(source_path_name) and os.path.isdir(target_path_name)):
     print('One or more invalid input directories: ')
@@ -25,11 +26,12 @@ if not (os.path.isdir(source_path_name) and os.path.isdir(target_path_name)):
 # probably an easier way to do this, but brute force suffices ...
 now = datetime.now()
 log_suffix = str.format("{:04d}{:02d}{:02d}_{:02d}{:02d}{:02d}", now.year, now.month, now.day, now.hour, now.minute, now.second)
-log_file_name = str.format("{}/unzipperpy_{}.log", home_dir, log_suffix)
+log_file_name = str.format("{}/unzipper_{}.log", home_dir, log_suffix)
 
 
 log_file = open(log_file_name, mode='w')
 
+target_path_name += 'lectures/'
 
 print('='*80, file=log_file)
 print('Source:' + source_path_name, file=log_file)
@@ -41,9 +43,9 @@ source_path = Path(source_path_name)
 interactive = False
 
 
-# this is fragile ...
-# relies on zip file having name of the form
-# 'aword somedigits and maybe some other stuff.zip', blank delimited
+# this is quite specific ...
+# relies on zip file having name of the form:
+#   'aword somedigits and maybe some other stuff.zip', blank delimited
 # if not, function bails & caller decides what to do about not getting anything back ...
 def dir_name_for_file(file_name):
     bits = str.split(file_name)
