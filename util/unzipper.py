@@ -2,6 +2,7 @@ from pathlib import Path
 from zipfile import ZipFile
 import os
 import shutil
+from datetime import datetime
 
 # Examine a downloaded 'lecture' zip file from Udemy - The Complete Java 8 Developer Course
 # For each 'project' (usually just one per zip, but sometimes more), extract all of the java files
@@ -13,12 +14,25 @@ import shutil
 home_dir = os.environ['HOME']
 source_path_name = home_dir + '/learn-master/udemy/java8-complete-reorg/zips/'
 target_path_name = home_dir + '/learn-master/udemy/java8-complete-reorg/lectures/'
+file_extension = 'java'
 
 if not (os.path.isdir(source_path_name) and os.path.isdir(target_path_name)):
     print('One or more invalid input directories: ')
     print('\t' + source_path_name)
     print('\t' + target_path_name)
     exit(1)
+
+now = datetime.now()
+log_suffix = str.format("{:04d}{:02d}{:02d}_{:02d}{:02d}{:02d}", now.year, now.month, now.day, now.hour, now.minute, now.second)
+log_file_name = str.format("{}/unzipper_{}.log", home_dir, log_suffix)
+
+
+log_file = open(log_file_name, mode='a+')
+
+
+print('='*80, file=log_file)
+print('Source:' + source_path_name, file=log_file)
+print('Target:' + target_path_name, file=log_file)
 
 
 source_path = Path(source_path_name)
@@ -54,7 +68,7 @@ for source_file in [entry for entry in source_path.iterdir() if entry.is_file()]
     source_file_name = source_file.name
 
     if source_file_name[-3:] != 'zip':
-        print("Skipping: " + source_file_name)
+        print("Skipping: " + source_file_name, file=log_file)
         continue
 
     if interactive:
@@ -62,7 +76,7 @@ for source_file in [entry for entry in source_path.iterdir() if entry.is_file()]
         if ok[0] != 'y':
             break
     else:
-        print("Processing: " + source_file_name)
+        print("Processing: " + source_file_name, file=log_file)
 
     lecture_dir_name = dir_name_for_file(source_file_name)
     if os.path.isdir(lecture_dir_name):
@@ -75,22 +89,23 @@ for source_file in [entry for entry in source_path.iterdir() if entry.is_file()]
     # some zip files contain multiple projects ...
     for root_dir in root_dirs:
         project_dir_name = lecture_dir_name + '/' + root_dir
-        # find and extract the ".java" files
+        # find and extract the matching ext files
         zfile_names = [zf.filename for zf in zip_file.filelist if
-                       zf.filename[-4:] == 'java' and zf.filename.find(root_dir) == 0]
-        for zfile_name in zfile_names:
-            zip_file.extract(zfile_name, project_dir_name)
+                       str.split(zf.filename, sep='.')[-1] == file_extension and zf.filename.find(root_dir) == 0]
 
-        # move them to the root (we'll be refactoring them to different packages later ...)
-        for dirName, subdirList, fileList in os.walk(project_dir_name):
-            for fileName in fileList:
-                shutil.move(dirName + '/' + fileName, project_dir_name)
+        if len(zfile_names) == 0:
+            print("Nothing found in {} in {} sub-dir".format(zip_file.filename, root_dir), file=log_file)
+        else:
+            for zfile_name in zfile_names:
+                zip_file.extract(zfile_name, project_dir_name)
 
-        # some of the zip files have an empty 'root' dir or one without java files
-        # if so, nothing gets extracted and 'project_dir_name' doesn't get created, so we need to check
-        if os.path.isdir(project_dir_name):
-            pd = Path(project_dir_name)
+            # move them to the root (we'll be refactoring them to different packages later ...)
+            for dirName, subdirList, fileList in os.walk(project_dir_name):
+                for fileName in fileList:
+                    shutil.move(dirName + '/' + fileName, project_dir_name)
+
             # now that source files have been moved to project's 'root dir', remove all sub-dirs
+            pd = Path(project_dir_name)
             for entry in [entry for entry in pd.iterdir() if entry.is_dir()]:
                 shutil.rmtree(project_dir_name + '/' + entry.name)
 
@@ -107,7 +122,7 @@ for source_file in [entry for entry in source_path.iterdir() if entry.is_file()]
             for entry_sub in [entry for entry in lpp.iterdir() if entry.is_dir()]:
                 # if we get here, we've discovered an extra level of nesting ...
                 entry_sub_full_name = entry_full_name + '/' + entry_sub.name
-                print("Moving: " + entry_sub_full_name)
+                print("Moving: " + entry_sub_full_name, file=log_file)
                 shutil.move(entry_sub_full_name, lecture_dir_name)
                 remove_parent = True
             if remove_parent:
@@ -117,3 +132,5 @@ for source_file in [entry for entry in source_path.iterdir() if entry.is_file()]
     # create a readme with the name of of the zip file from which it all came
     with open(lecture_dir_name + '/readme.txt', 'w') as rm:
         rm.writelines(source_file_name)
+
+log_file.close()
