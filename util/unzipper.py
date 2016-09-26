@@ -15,9 +15,13 @@ join = os.path.join
 # after everything is moved, remove orphaned directories
 
 home_dir = os.environ['HOME']
-source_path_name = join(home_dir, 'learn-master/udemy/python-complete-reorg/zips/')
-target_path_name = join(home_dir, 'learn-master/udemy/python-complete-reorg/')
-file_extensions = ['java', 'py', 'txt']
+source_path_name = join(home_dir, 'learn-master/udemy/java8-complete-reorg/zips/')
+target_path_name = join(home_dir, 'learn-master/udemy/java8-complete-reorg/')
+file_extensions = ['java', 'fxml', 'py', 'txt']
+
+# these are the directories to exclude when looking for files ...
+# this is needed when files get copied on build - e.g. JavaFX fxml files
+junk_dirs = ['/out/']
 
 if not (os.path.isdir(source_path_name) and os.path.isdir(target_path_name)):
     print('One or more invalid input directories: ')
@@ -116,6 +120,9 @@ for source_file in [entry for entry in source_path.iterdir() if entry.is_file()]
         # find and extract the matching ext files
         zfile_names = [zf.filename for zf in zip_file.filelist if
                        str.split(zf.filename, sep='.')[-1] in file_extensions and zf.filename.find(root_dir) == 0]
+
+        for dir_to_exclude in junk_dirs:
+            zfile_names = [file_name for file_name in zfile_names if file_name.find(dir_to_exclude) == -1]
 
         if len(zfile_names) == 0:
             print("Nothing found in {} in {} sub-dir".format(zip_file.filename, root_dir), file=log_file)
