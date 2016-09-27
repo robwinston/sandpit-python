@@ -1,6 +1,5 @@
 import os
 import utils
-from datetime import datetime
 from pathlib import Path
 
 join = os.path.join
@@ -8,7 +7,7 @@ join = os.path.join
 home_dir = utils.ShellCommands.home()
 
 source_full_path_name = join(home_dir, 'learn-master/udemy/java8-complete-reorg/lectures/')
-target_path_name = join(home_dir, 'learn-master/udemy/java8-complete-reorg/')
+target_path_base = join(home_dir, 'learn-master/udemy/java8-complete-reorg/')
 
 # TODO get all regexxy with this ...
 source_dir_pattern = 'Lecture'
@@ -22,28 +21,16 @@ default_package_dir = 'com/timbuchalka'
 reserved_words = ['while', 'final', 'static', 'switch']
 
 
-if not (os.path.isdir(source_full_path_name) and os.path.isdir(target_path_name)):
-    print('One or more invalid input directories: ')
-    print('\t' + source_full_path_name)
-    print('\t' + target_path_name)
+if not (os.path.isdir(source_full_path_name) and os.path.isdir(target_path_base)):
+    print('One or more invalid working directories: ')
+    print('\tSource:' + source_full_path_name)
+    print('\tTarget:' + target_path_base)
     exit(1)
 
-utils.ShellCommands.mkdir('master', target_path_name)
-target_path_name = join(target_path_name, 'master')
 
-current_datetime = datetime.now().date()
+utils.ShellCommands.mkdir('master', target_path_base)
+target_path_name = join(target_path_base, 'master')
 
-
-def process_package_line(line_to_process, package_suffix):
-    original_package_name = line_to_process.split()[1][:-1]
-    new_package_name = '.'\
-        .join(utils.remove_all_but_last_if_duplicated('{}.{}'.format(original_package_name, package_suffix).split('.')))
-    return 'package {};\n'.format(new_package_name)
-
-
-# TODO add a date / time to this ...
-def process_doc_line(line_to_process):
-    return line_to_process + ' * Modified by getify.py on {}.\n'.format(current_datetime)
 
 
 def get_file_ext(the_file_name):
@@ -54,9 +41,8 @@ def get_file_ext(the_file_name):
         return None
 
 
-def write_file(file_name, its_contents):
-    with open(file_name, 'w') as f:
-        f.writelines(its_contents)
+def full_package_dir():
+    pass
 
 
 def cleanse_package_name(pkg_name):
@@ -80,26 +66,40 @@ def cleanse_package_name(pkg_name):
         return '.'.join(utils.remove_all_but_last_if_duplicated(pkg_name.split('.')))
 
 
-def process_java_file(file_to_process):
-    out_lines = []
-    new_package_line = None
-    pkg_name = None
+def add_or_modify_package_name(lines):
+    return '', lines
 
-    with open(file_to_process, 'r') as source_file:
-        for line in source_file.readlines():
-            if line.find('package') == 0:
-                if line.find('todolist') != -1:
-                    print('here')
-                new_package_line = process_package_line(line, '{}.{}'.format(package_lecture, package_project))
-                pkg_name = new_package_line.split()[1][:-1]
-                out_lines.append(new_package_line)
-            elif line.find('* Created by ') != -1:
-                out_lines.append(process_doc_line(line))
-            else:
-                out_lines.append(line)
-    if new_package_line == '':
-        print('no package name in source')
-    return pkg_name, out_lines
+
+def modify_imports(lines):
+    return lines
+
+
+
+
+
+def process_java_file(file_to_process):
+
+    its_lines = all_lines(file_to_process)
+    pkg_name, its_lines = add_or_modify_package_name(its_lines)
+    its_lines = modify_imports(its_lines)
+    its_lines = add_or_modify_doc_string(its_lines)
+
+    # with open(file_to_process, 'r') as source_file:
+    #     for line in source_file.readlines():
+    #         if line.find('package') == 0:
+    #             if line.find('todolist') != -1:
+    #                 print('here')
+    #             new_package_line = process_package_line(line, '{}.{}'.format(package_lecture, package_project))
+    #             pkg_name = new_package_line.split()[1][:-1]
+    #             out_lines.append(new_package_line)
+    #         elif line.find('* Created by ') != -1:
+    #             out_lines.append(process_doc_line(line))
+    #         else:
+    #             out_lines.append(line)
+    # if new_package_line == '':
+    #     print('no package name in source')
+
+    return pkg_name, its_lines
 
 source_path = Path(source_full_path_name)
 # num_to_process = 10
