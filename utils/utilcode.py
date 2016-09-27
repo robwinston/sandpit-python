@@ -1,5 +1,7 @@
+import os
 from datetime import datetime
 from utillist import remove_all_but_last_if_duplicated
+from utilfile import all_lines
 
 
 def get_datetime_string():
@@ -82,5 +84,59 @@ def add_or_modify_package_name(lines):
 
 def modify_imports(lines):
     return lines
+
+def full_package_dir():
+    pass
+
+
+def all_package_names(file_content_pairs):
+    return [(file_name, get_existing_package_name(its_lines)) for (file_name, its_lines) in file_content_pairs]
+
+
+def unique_package_names(file_package_pairs):
+    return set([package_name for (_, package_name) in file_package_pairs]) - {None}
+
+
+def common_package_root(package_names):
+    if len(package_names) == 0:
+        return None
+    if len(package_names) == 1:
+        return package_names[0]
+    
+    package_nodes = [package_name.split('.') for package_name in package_names]
+    shortest_len = min([len(nodes) for nodes in package_nodes])
+    root_nodes = []
+    for idx in range(0, shortest_len):
+        if len(set([nodes[idx] for nodes in package_nodes])) == 1:
+            root_nodes.append(package_nodes[0][idx])
+        else:
+            break
+    return '.'.join(root_nodes) if len(root_nodes) > 0 else None
+
+
+
+def process_java_lines(its_lines):
+
+    pkg_name, its_lines = add_or_modify_package_name(its_lines)
+    its_lines = modify_imports(its_lines)
+    its_lines = add_or_modify_doc_string(its_lines)
+
+    return pkg_name, its_lines
+
+
+# java files need their package names altered to match their destination
+def process_java_files(files_to_process):
+    # create a list of pairs ("pathless" file name, its content as a list of lines)
+    file_content_pairs = [(os.path.basename(file_to_process), all_lines(file_to_process))
+                          for file_to_process in files_to_process]
+    all_pkg_names = all_package_names(file_content_pairs)
+    unique_pkg_names = unique_package_names(all_pkg_names)
+    print('Files: {}, pkg names: {}, unq pns: {}'.format(len(file_content_pairs), len(all_pkg_names), len(unique_pkg_names)))
+    if len(unique_pkg_names) > 1:
+        print(unique_pkg_names)
+        cpr = common_package_root(unique_pkg_names)
+        print("common root: " + cpr)
+
+
 
 
