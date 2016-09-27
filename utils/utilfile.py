@@ -9,3 +9,10 @@ def write_file(file_name_, its_contents):
         f.writelines(its_contents)
 
 
+def get_file_ext(the_file_name):
+    its_bits = the_file_name.split('.')
+    if len(its_bits) == 2:
+        return its_bits[1]
+    else:
+        return None
+
