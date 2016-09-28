@@ -129,14 +129,36 @@ def add_or_modify_package_name(file_with_pkg_and_content, common_pkg_root):
     else:
         new_file_contents = [new_package_line] + original_file_contents[1:]
 
-    return new_package_name, new_file_contents
+    return original_package_name, new_package_name, new_file_contents
 
 
-def modify_imports(lines):
-    return lines
+def modify_imports(original_package_name, new_pkg_name, file_contents):
+    if original_package_name is None:
+        return file_contents
+
+    new_file_contents = []
+    for line in file_contents:
+        # TODO do this with a regex ...
+        if line.find('import') == 0:
+            the_import = line.split()[1]
+            if the_import[-1] == '/n':
+                the_import = the_import[:-1]
+            if the_import[-1] == ';':
+                the_import = the_import[:-1]
+            if the_import.find(original_package_name) != -1:
+                original_nodes = original_package_name.split('.')
+                the_import_nodes = the_import.split('.')
+                trailing_nodes = [node for node in the_import_nodes if node not in original_nodes]
+                new_line = 'import {}.{};'.format(new_pkg_name, '.'.join(trailing_nodes))
+                new_file_contents.append(new_line)
+            else:
+                new_file_contents.append(line)
+        else:
+            new_file_contents.append(line)
+
+    return new_file_contents
 
 
-# java files need their package names altered to match their destination
 def process_java_files(files_to_process, default_package_root):
     files_with_content = [(file_to_process, all_lines(file_to_process)) for file_to_process in files_to_process]
     files_with_pkg_and_content = add_original_package_names(files_with_content)
@@ -147,8 +169,10 @@ def process_java_files(files_to_process, default_package_root):
 
     processed_files = []
     for file_with_pkg_and_content in files_with_pkg_and_content:
-        new_pkg_name, new_file_contents = add_or_modify_package_name(file_with_pkg_and_content, common_pkg_root)
-        new_file_contents = modify_imports(new_file_contents)
+        # java files need their package names altered to match their destination
+        original_package_name, new_pkg_name, new_file_contents = add_or_modify_package_name(file_with_pkg_and_content, common_pkg_root)
+        # ... and relevant imports need to agree
+        new_file_contents = modify_imports(original_package_name, new_pkg_name, new_file_contents)
         new_file_contents = add_or_modify_doc_string(new_file_contents)
         processed_files.append((file_with_pkg_and_content[0], new_pkg_name, new_file_contents))
     return processed_files
