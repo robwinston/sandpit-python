@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 from utillist import remove_all_but_last_if_duplicated
 from utilfile import all_lines
@@ -14,7 +13,6 @@ def add_or_modify_doc_string(lines):
     existing_doc_strings = []
     put_doc_strings = False
     for line in lines:
-        line = line[:-1]
         if put_doc_strings:
             lines_out.append(line)
         elif 'class' in line.split():
@@ -28,7 +26,6 @@ def add_or_modify_doc_string(lines):
                 existing_doc_strings.append(line[2:])
         else:
             lines_out.append(line)
-
     return lines_out
 
 
@@ -91,6 +88,7 @@ def cleanse_package_name(pkg_name):
     if pkg_name is None:
         return None
     pkg_name = pkg_name.replace(' ', '_')
+    pkg_name = str.lower(pkg_name)
     # TODO for fun & profit, derive a functional way to do this ...
     if any(rw in pkg_name for rw in reserved_words):
         its_bits = pkg_name.split('.')
@@ -112,7 +110,7 @@ def add_or_modify_package_name(file_with_pkg_and_content, common_pkg_root):
     src_file_name, original_package_name, original_file_contents = file_with_pkg_and_content
 
     pkg_suffix = None if original_package_name is None or len(original_package_name) == len(common_pkg_root) \
-        else original_package_name[len(common_pkg_root.split('.')):]
+        else '.'.join(original_package_name.split('.')[len(common_pkg_root.split('.')):])
 
     # TODO this approach seems ugly ...
     src_path_bits = src_file_name.split('/')
@@ -120,10 +118,11 @@ def add_or_modify_package_name(file_with_pkg_and_content, common_pkg_root):
     lecture_node = src_path_bits[-3]
 
     new_package_name = cleanse_package_name('.'.join([common_pkg_root, lecture_node, prj_node]))
-    if pkg_suffix is not None:
-        '.'.join([new_package_name, pkg_suffix])
 
-    new_package_line = str.format('package {};', new_package_name)
+    if pkg_suffix is not None:
+        new_package_name = '.'.join([new_package_name, pkg_suffix])
+
+    new_package_line = str.format('package {};\n', new_package_name)
 
     if original_package_name is None:
         new_file_contents = [new_package_line] + original_file_contents
@@ -138,20 +137,19 @@ def modify_imports(lines):
 
 
 # java files need their package names altered to match their destination
-def process_java_files(files_to_process):
-    # create a list of pairs ("pathless" file name, its content as a list of lines)
+def process_java_files(files_to_process, default_package_root):
     files_with_content = [(file_to_process, all_lines(file_to_process)) for file_to_process in files_to_process]
     files_with_pkg_and_content = add_original_package_names(files_with_content)
     unique_pkg_names = unique_package_names(files_with_pkg_and_content)
     common_pkg_root = common_package_root(unique_pkg_names)
+    if common_pkg_root is None:
+        common_pkg_root = default_package_root
+
+    processed_files = []
     for file_with_pkg_and_content in files_with_pkg_and_content:
         new_pkg_name, new_file_contents = add_or_modify_package_name(file_with_pkg_and_content, common_pkg_root)
         new_file_contents = modify_imports(new_file_contents)
         new_file_contents = add_or_modify_doc_string(new_file_contents)
-        print('here')
-
-
-
-
-
+        processed_files.append((file_with_pkg_and_content[0], new_pkg_name, new_file_contents))
+    return processed_files
 
